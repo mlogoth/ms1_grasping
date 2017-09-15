@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+___________________________________________________________________
+This launch file brings up the above nodes:
+	* Object Recognition Algorithm
+	* Object Recognized Publisher
+	* Send Planner The Desired Goal In order to Move Close to Table
+___________________________________________________________________
+-->
+
+<launch>
+	
+	<!-- Object Id In CouchDB -->
+	<!-- <arg name="id" default="4e37b85ae1a07dcb5243ee571d00841f"/> -->  
+	<arg name="id" default="d5bd927be17de95dc70a2c726b000277"/> 
+	<!-- Desired Pose Of The Tiago -->
+	<arg name="x" default="0.43" />
+	<arg name="y" default="1.86" />
+	<arg name="theta" default="120.0" />
+	
+	<!-- Path of ORK Tabletop Configuration File -->
+	<!--<arg name="path" default="`rospack find object_recognition_tabletop`/conf/tiago.detection.object.ros.ork"/> -->
+	
+	<node name="tabletop_object_detection" pkg="object_recognition_core" type="detection" args="-c $(find ms1_grasping)/config/tiago.detection.object.ros.ork"/>
+	
+	<node name="object_recognized_pub" pkg="ms1_grasping" type="object_recognition_publisher.py" args="$(arg id)"/>
+	
+	<node name="go_to_table" pkg="ms1_grasping" type="move_base_client.py" args="$(arg x) $(arg y) $(arg theta)"/>
+</launch>

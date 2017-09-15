@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+____________________________
+Control Gripper with Moveit 
+____________________________
+-->
+
+<launch>
+	<!-- If we want to send random pose command-->
+	<arg name="f1" default="0.004"/> <!--accepted values: 0.004 to 0.043 -->
+	<arg name="f2" default="0.004"/>
+<!--	-->
+<!--	<node ns="robot_0" name="tiago_gripper_control" pkg="ms1_grasping" type="tiago_gripper_control" args="-p $(arg f1) $(arg f2)" output="screen"/>-->
+	
+	<node ns="robot_0" name="tiago_gripper_control" pkg="ms1_grasping" type="tiago_gripper_control" args="-cmd open" output="screen"/>
+</launch>
+

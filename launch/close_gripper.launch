@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+	<node ns="robot_0" name="tiago_gripper_control" pkg="ms1_grasping" type="tiago_gripper_control" args="-cmd close" output="screen"/>
+
+</launch>
+
