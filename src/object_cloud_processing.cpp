@@ -225,7 +225,8 @@ class PCL{
 int main(int argc, char* argv[])
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cl_hull(new pcl::PointCloud<pcl::PointXYZ>),pcl_source(new pcl::PointCloud<pcl::PointXYZ>),
-	                                      cloud_l(new pcl::PointCloud<pcl::PointXYZ>),cloud_r(new pcl::PointCloud<pcl::PointXYZ>);
+	                                    cloud_l(new pcl::PointCloud<pcl::PointXYZ>),cloud_r(new pcl::PointCloud<pcl::PointXYZ>),
+	                                    cloud_cluster1(new pcl::PointCloud<pcl::PointXYZ>),cloud_cluster2(new pcl::PointCloud<pcl::PointXYZ>);
 	bool visualization = false;
 	//init script ros node
   ros::init(argc, argv, "PCL_processing");
@@ -249,6 +250,7 @@ int main(int argc, char* argv[])
 	double mask_length = 0.095;
 	Vector3f mask_pose(0.0,0.0,-0.08);
 	int loops = 20;
+	double step = 0.0;
 	
 	if (argc>1){
 		mask_pose[2] = atof(argv[1]);
@@ -299,14 +301,16 @@ int main(int argc, char* argv[])
 			
 			
 			/*
-			 * //   Searching for Optimal Grasping Areas
-			 */
+			* //   Searching for Optimal Grasping Areas
+			*/
 			
 			
 			//Initial Mask Pose
 			mask_pose[2]=min.z+ mask_height/2.0;
 			// Initialize minimum angle
 			double min_angle = 180.0;
+			double min_mask_pose = mask_pose[2];
+			
 			
 			for (int i=0; i++; i<loops){
 				
@@ -382,11 +386,12 @@ int main(int argc, char* argv[])
 							optimal_grasp.right_indicies = inli_r->indices;
 						}
 							
-					else if (abs(mask_pose[2])<min_mask_pose)&&(angle==min_angle){
+					else if ((abs(mask_pose[2])<min_mask_pose)&&(angle==min_angle)){
 							
 							optimal_grasp.angle = angle;
 							optimal_grasp.left_indicies = inli_l->indices;
 							optimal_grasp.right_indicies = inli_r->indices;
+							min_mask_pose = mask_pose[2];
 						}
 						
 	
@@ -401,8 +406,26 @@ int main(int argc, char* argv[])
 			}
 			
 			
+			// ----------------------------------
+			//-- Optimized Grasping Areas Are Saved in Structure
+			//--------------------------------------------------
 			
 			
+			boost::shared_ptr<vector<int> > indicesptr1 (new vector<int> (optimal_grasp.left_indicies));
+			
+			
+			extract.setInputCloud (pcl_source);  //
+			extract.setIndices(indicesptr1); //
+			extract.setNegative (false);
+			extract.filter (*cloud_cluster1); //
+			
+			boost::shared_ptr<vector<int> > indicesptr2 (new vector<int> (optimal_grasp.right_indicies));
+			
+			extract.setInputCloud (pcl_source);  //
+			extract.setIndices(indicesptr2); //
+			extract.setNegative (false);
+			extract.filter (*cloud_cluster2); //
+
 			
 			
 			//VISUALIZATION
@@ -416,6 +439,8 @@ int main(int argc, char* argv[])
 				pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> left_cloud_color_handler (cloud_l,0, 64, 255); //blue
 				pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> right_cloud_color_handler (cloud_r, 230, 20, 20); // Red
 				
+				pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> left_src_color_handler (cloud_cluster1,0, 64, 255); //blue
+				pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> right_src_color_handler (cloud_cluster2, 230, 20, 20); // Red
 				
 				
 				// We add the point cloud to the viewer and pass the color handler
@@ -424,6 +449,9 @@ int main(int argc, char* argv[])
 				viewer.addPointCloud (cloud_r, right_cloud_color_handler, "right_cloud");
 				viewer.addPointCloud (cloud_l, left_cloud_color_handler, "left_cloud");
 				
+				viewer.addPointCloud (cloud_cluster1, left_src_color_handler, "left_src_cloud");
+				viewer.addPointCloud (cloud_cluster2, right_src_color_handler, "right_src_cloud");
+				
 				viewer.addCoordinateSystem (0.1);
 				viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
 				
@@ -431,6 +459,9 @@ int main(int argc, char* argv[])
 				viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "projected_cloud");
 				viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "left_cloud");
 				viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "right_cloud");
+				
+				viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "left_src_cloud");
+				viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "right_src_cloud");
 				//viewer.setPosition(800, 400); // Setting visualiser window position
 				
 			while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
